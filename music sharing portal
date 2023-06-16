@@ -67,9 +67,3 @@ urlpatterns = [
     path('upload/', views.upload_music, name='upload_music'),
     path('music_files/', views.music_files, name='music_files'),
 ]
-git init
-git add README.md
-git commit -m "first commit"
-git branch -M main
-git remote add origin https://github.com/Yash-Vidyasagar/Music-Sharing-Portal.git
-git push -u origin main
