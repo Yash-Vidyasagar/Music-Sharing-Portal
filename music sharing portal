@@ -1,0 +1,75 @@
+# models.py
+from django.db import models
+from django.contrib.auth.models import User
+
+class MusicFile(models.Model):
+    PUBLIC = 'public'
+    PRIVATE = 'private'
+    PROTECTED = 'protected'
+    ACCESS_CHOICES = [
+        (PUBLIC, 'Public'),
+        (PRIVATE, 'Private'),
+        (PROTECTED, 'Protected'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=100)
+    file = models.FileField(upload_to='music_files')
+    access = models.CharField(max_length=10, choices=ACCESS_CHOICES, default=PUBLIC)
+    allowed_emails = models.TextField(blank=True, null=True)
+
+# views.py
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from .forms import MusicFileForm
+
+@login_required
+def upload_music(request):
+    if request.method == 'POST':
+        form = MusicFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            music_file = form.save(commit=False)
+            music_file.user = request.user
+
+            if music_file.access == 'protected':
+                allowed_emails = form.cleaned_data.get('allowed_emails')
+                music_file.allowed_emails = allowed_emails
+
+            music_file.save()
+            return redirect('music_files')
+    else:
+        form = MusicFileForm()
+    
+    return render(request, 'upload_music.html', {'form': form})
+
+@login_required
+def music_files(request):
+    files = MusicFile.objects.filter(models.Q(access='public') | models.Q(user=request.user) | models.Q(allowed_emails__contains=request.user.email))
+    return render(request, 'music_files.html', {'files': files})
+
+# forms.py
+from django import forms
+from .models import MusicFile
+
+class MusicFileForm(forms.ModelForm):
+    class Meta:
+        model = MusicFile
+        fields = ['title', 'file', 'access', 'allowed_emails']
+        widgets = {
+            'allowed_emails': forms.Textarea(attrs={'rows': 3}),
+        }
+
+# urls.py
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('upload/', views.upload_music, name='upload_music'),
+    path('music_files/', views.music_files, name='music_files'),
+]
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/Yash-Vidyasagar/Music-Sharing-Portal.git
+git push -u origin main
